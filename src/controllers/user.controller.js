@@ -242,9 +242,171 @@ const refreshAccessToken = asyncHandler( async(req,res) => {
 
 } )
 
+const changeCurrentPassword = asyncHandler (
+    async (req,res) => {
+        const {oldPassword,newPassword} = req.body
+
+        const currentUser = await User.findById(req.user?._id)
+        const passwordCheck = await currentUser.isPasswordCorrect(oldPassword)
+
+        if(!passwordCheck) {
+            throw new ApiError(400,"Invalid old password")
+        }
+
+        currentUser.password = newPassword
+        await currentUser.save({validateBeforeSave:false})
+
+        return res
+                .status(200)
+                .json(
+                    new ApiResponse(200,{},"Password changed successfully")
+                )
+    }
+)
+
+const getCurrentUser = asyncHandler(
+    async (req,res) => {
+        return res
+                .status(200)
+                .json(
+                    new ApiResponse(200,req.user,"Current user fetched successfully")
+                )
+    }
+)
+
+const updateAccountDetails = asyncHandler(
+    async (req,res) => {
+        const {fullName,email} = req.body
+
+        if(!fullName && !email) {
+            throw new ApiError(400,"Fullname and email are required")
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(
+            req.user?._id,
+            {
+                $set: {
+                    fullName,
+                    email: email
+                }
+            },
+            {
+                new: true
+            }
+        ).select("-password")
+
+        return res
+                .status(200)
+                .json(
+                    new ApiResponse(
+                        200,
+                        updatedUser,
+                        "Account details updated successfully"
+                    )
+                )
+    }
+)
+
+const updateUserAvatar = asyncHandler (
+    async(req,res) => {
+        // Bcoz we need only one file ,b4 in register it was 2 bcoz we added them as middleware
+        const avatarLocalPath = req.file?.path
+
+        if(!avatarLocalPath) {
+            throw new ApiError(
+                400,
+                "Avatar file is missing"
+            )
+        }
+
+        const avatar = await uploadOnCloudinary(avatarLocalPath)
+
+        if(!avatar.url) {
+            throw new ApiError(
+                400,
+                "Error while uploading avatar"
+            )
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(
+            req.user?._id,
+            {
+                $set: {
+                    avatar: avatar.url
+                }
+            },
+            {
+                new: true
+            }
+        ).select("-passsword")
+
+        return res
+                .status(200)
+                .json(
+                    new ApiResponse(
+                        200,
+                        updatedUser,
+                        "Avatar image changed successfully"
+                    )
+                )
+    }
+)
+
+const updateUserCoverImage = asyncHandler (
+    async(req,res) => {
+        // Bcoz we need only one file ,b4 in register it was 2 bcoz we added them as middleware
+        const coverImageLocalPath = req.file?.path
+
+        if(!coverImageLocalPath) {
+            throw new ApiError(
+                400,
+                "Cover image file is missing"
+            )
+        }
+
+        const coverImage = await uploadOnCloudinary(coverImageLocalPath)
+
+        if(!coverImage.url) {
+            throw new ApiError(
+                400,
+                "Error while uploading Cover image"
+            )
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(
+            req.user?._id,
+            {
+                $set: {
+                    coverImage: coverImage.url
+                }
+            },
+            {
+                new: true
+            }
+        ).select("-passsword")
+
+        return res
+                .status(200)
+                .json(
+                    new ApiResponse(
+                        200,
+                        updatedUser,
+                        "Cover image changed successfully"
+                    )
+                )
+    }
+)
+
+// TODO : Write file updation controllers in a new file or new different endpoint | Don't push everything in a single endpoint
+
 export {
     registerUser,
     loginUser,
     logoutUser,
-    refreshAccessToken
+    refreshAccessToken,
+    changeCurrentPassword,
+    getCurrentUser,
+    updateAccountDetails,
+    updateUserAvatar,
+    updateUserCoverImage
 }
