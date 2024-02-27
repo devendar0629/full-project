@@ -3,6 +3,7 @@ import {ApiError} from '../utils/ApiError.js'
 import { User } from '../models/user.model.js'
 import { uploadOnCloudinary } from '../utils/cloudinary.js'
 import { ApiResponse } from '../utils/ApiResponse.js'
+import jwt from 'jsonwebtoken'
 
 const registerUser = asyncHandler( async (req,res) => {
     // STEPS :
@@ -15,7 +16,6 @@ const registerUser = asyncHandler( async (req,res) => {
     // remove password and refresh token field from response
     // check for user creation
     // return response
-
 
     const {fullName,email,username,password} = req.body
 
@@ -39,31 +39,32 @@ const registerUser = asyncHandler( async (req,res) => {
         throw new ApiError(409, `User with username: ${username} or email: ${email} already exists`)
     }
 
-    // const avatarLocalPath = req.files?.avatar[0]?.path;
     let avatarLocalPath;
+
+    // console.log("req.files : ",req.files);
+    for(let key in req.files){
+        console.log("Key : ",key," | Value : ",req.files[key]);
+    }
 
     if(req.files && Array.isArray(req.files.avatar) && req.files.avatar.length > 0){
         avatarLocalPath = req.files.avatar[0].path
+        console.log("Avatar path local : ",avatarLocalPath);
     }else{
-        avatarLocalPath = null
-    }
-
-    if(!avatarLocalPath){
         throw new ApiError(400,"Avatar file is required");
     }
 
     let coverImageLocalPath;
     if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0){
-        coverImageLocalPath = req.fiiles.coverImage[0].path
+        coverImageLocalPath = req.files.coverImage[0].path
     }
 
     const avatar = await uploadOnCloudinary(avatarLocalPath)
     const coverImage = await uploadOnCloudinary(coverImageLocalPath)
 
-    if(!avatar) {
-        // TODO : Make error message more understandable
-        throw new ApiError(400,"Avatar file is required");
-    }
+    // if(!avatar) {
+    //     // TODO : Make error message more understandable
+    //     throw new ApiError(400,"Avatar file is required");
+    // }
 
     const user = await User.create({
         fullName,
@@ -117,7 +118,10 @@ const loginUser = asyncHandler( async(req,res) => {
 
     const {email,username,password} = req.body
 
-    if(!username && !email) {
+    console.log(email);
+    console.log(username);
+
+    if(!email && !username) {
         throw new ApiError(400,"Username or email is required");
     }
 
@@ -190,8 +194,57 @@ const logoutUser = asyncHandler(async (req,res) => {
             )
 })
 
+const refreshAccessToken = asyncHandler( async(req,res) => {
+    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+    if(!incomingRefreshToken){
+        throw new ApiError(401,"Unauthorized request");
+    }
+
+    try {
+        const decodedToken = jwt.verify(
+            incomingRefreshToken,
+            process.env.REFRESH_TOKEN_SECRET
+        )
+    
+        const user = await User.findById(decodedToken?._id)
+    
+        if(!user){
+            throw new ApiError(401,"Invalid refresh token");
+        }
+    
+        if(incomingRefreshToken !== user?.refreshToken){
+            throw new ApiError(401,"Refresh token is expired or used");
+        }
+    
+        const {newAccessToken,newRefreshToken} = await generateAccessAndRefreshTokens(user?._id)
+        const cookieOptions = {
+            httpOnly: true,
+            secure: true
+        }
+    
+        return res
+                .status(200)
+                .cookie("accessToken",newAccessToken,cookieOptions)
+                .cookie("refreshToken",newRefreshToken,cookieOptions)
+                .json(
+                    new ApiResponse(
+                        200,
+                        {
+                            newAccessToken,
+                            newRefreshToken
+                        },
+                        "Access token refreshed"
+                    )
+                )
+    } catch (error) {
+        throw new ApiError(400,error?.message || "Invalid refresh token");
+    }
+
+} )
+
 export {
     registerUser,
     loginUser,
-    logoutUser
+    logoutUser,
+    refreshAccessToken
 }
