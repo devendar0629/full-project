@@ -10,21 +10,20 @@ const verifyJWT = asyncHandler( async (req, _,next) => {
     try {
         // Because if the user is on mobile , he can't send . So check if he send custom header
         const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ","")
-    
+
         if(!token) {
             throw new ApiError(401,"Unauthorized request")
         }
-    
+
         const decodedToken = jwt.verify(token,process.env.ACCESS_TOKEN_SECRET)
-    
+
         // The _id property was set by us when creating the access token
         const user = await User.findById(decodedToken?._id).select("-password -refreshToken")
-    
+
         if(!user) {
-            // Discussion abut frontend
             throw new ApiError(401,"Invalid access token")
         }
-    
+
         req.user = user;
         next()
     } catch (error) {

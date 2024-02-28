@@ -14,9 +14,10 @@ const uploadOnCloudinary = async (localFilePath) => {
         const response = await cloudinary.uploader.upload(localFilePath,{
             resource_type: 'auto'
         })
-        // file has been uploaded successfully
-        // console.log(`CLOUDINARY UPLOAD SUCCESS : ${response.url}`);
+
         fs.unlinkSync(localFilePath)
+        // we should not expose api keys
+        delete response.api_key
         return response
     } catch (error) {
         fs.unlinkSync(localFilePath) // remove the local saved temp file , as the upload operationn got failed
@@ -25,8 +26,9 @@ const uploadOnCloudinary = async (localFilePath) => {
 }
 
 // TODO: Try this
-const deleteFromCloudinary = async (localFilePath) => {
+const deleteFromCloudinary = async (cloudFileUrl) => {
     try {
+        await cloudinary.api.dele
     } catch (error) {
         
     }

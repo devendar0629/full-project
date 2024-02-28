@@ -14,7 +14,7 @@ connectDB()
             throw err;
         })
         app.listen(process.env.PORT || 8000,(req,resp) => {
-            console.log(`EXPRESS Server listening at ${process.env.PORT || 8000}`);
+            console.log(`-------------------------------- EXPRESS Server listening at http://localhost:${process.env.PORT || 8000}`);
         })
     })
     .catch((err) => {
