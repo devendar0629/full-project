@@ -7,15 +7,21 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET 
 });
 
-const uploadOnCloudinary = async (localFilePath) => {
+const uploadFile = async (localFilePath,folderName = '') => {
     try {
         if(!localFilePath) return null
         // upload the file
         const response = await cloudinary.uploader.upload(localFilePath,{
-            resource_type: 'auto'
+            resource_type: 'auto',
+            folder: folderName
         })
 
+        if(!response) {
+            return null;
+        }
+
         fs.unlinkSync(localFilePath)
+
         // we should not expose api keys
         delete response.api_key
         return response
@@ -26,12 +32,14 @@ const uploadOnCloudinary = async (localFilePath) => {
 }
 
 // TODO: Try this
-const deleteFromCloudinary = async (cloudFileUrl) => {
-    try {
-        await cloudinary.api.dele
-    } catch (error) {
+// const deleteFromCloudinary = async (cloudFileUrl) => {
+//     try {
+//         await cloudinary.api.dele
+//     } catch (error) {
         
-    }
-}
+//     }
+// }
 
-export {uploadOnCloudinary}
+export {
+    uploadFile
+}

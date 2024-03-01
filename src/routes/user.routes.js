@@ -11,13 +11,13 @@ import { changeUserPassword,
     updateUserAvatar,
     updateUserCoverImage
 } from '../controllers/user.controller.js'
-import {upload} from '../middlewares/multer.middleware.js'
+import {multerUpload} from '../middlewares/multer.middleware.js'
 import { verifyJWT } from '../middlewares/auth.middleware.js'
 
 const router = Router()
 
 router.route("/register").post(
-    upload.fields([
+    multerUpload.fields([
         {
             name: "avatar",
             maxCount: 1
@@ -43,13 +43,13 @@ router.route('/update-account').patch(verifyJWT,updateAccountDetails)
 
 router.route('/avatar').patch(
     verifyJWT,
-    upload.single("avatar"),
+    multerUpload.single("avatar"),
     updateUserAvatar
 )
 
 router.route('/cover-image').patch(
     verifyJWT,
-    upload.single("coverImage"),
+    multerUpload.single("coverImage"),
     updateUserCoverImage
 )
 

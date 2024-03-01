@@ -1,1 +1,14 @@
-export const DB_NAME = "videotube"
+const DB_NAME = "videotube"
+
+const CLOUDINARY_VIDEO_FOLDER = "videos"
+const CLOUDINARY_COVERIMAGE_FOLDER = "cover-images"
+const CLOUDINARY_AVATAR_FOLDER = "avatars"
+const CLOUDINARY_THUMBNAIL_FOLDER = "thumbnails"
+
+export {
+    DB_NAME,
+    CLOUDINARY_VIDEO_FOLDER,
+    CLOUDINARY_COVERIMAGE_FOLDER,
+    CLOUDINARY_AVATAR_FOLDER,
+    CLOUDINARY_THUMBNAIL_FOLDER
+}
