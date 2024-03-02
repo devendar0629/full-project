@@ -1,5 +1,6 @@
-import {Router} from 'express'
-import { changeUserPassword,
+import { Router } from "express";
+import {
+    changeUserPassword,
     getCurrentUser,
     getUserChannelProfile,
     getWatchHistory,
@@ -9,53 +10,49 @@ import { changeUserPassword,
     registerUser,
     updateAccountDetails,
     updateUserAvatar,
-    updateUserCoverImage
-} from '../controllers/user.controller.js'
-import {multerUpload} from '../middlewares/multer.middleware.js'
-import { verifyJWT } from '../middlewares/auth.middleware.js'
+    updateUserCoverImage,
+} from "../controllers/user.controller.js";
+import { multerUpload } from "../middlewares/multer.middleware.js";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
 
-const router = Router()
+const router = Router();
 
 router.route("/register").post(
     multerUpload.fields([
         {
             name: "avatar",
-            maxCount: 1
+            maxCount: 1,
         },
         {
             name: "coverImage",
-            maxCount: 1
-        }
+            maxCount: 1,
+        },
     ]),
     registerUser
-)
+);
 
-router.route("/login").post(loginUser)
+router.route("/login").post(loginUser);
 
 // secured routes
 //the verifyJWT calls next when it's work is done , and logoutUser is exexuted after it
 
-router.route('/logout').post(verifyJWT,logoutUser)
-router.route("/refresh-access-token").post(refreshAccessToken)
-router.route('/change-password').post(verifyJWT,changeUserPassword)
-router.route('/current-user').get(verifyJWT,getCurrentUser)
-router.route('/update-account').patch(verifyJWT,updateAccountDetails)
+router.route("/logout").post(verifyJWT, logoutUser);
+router.route("/refresh-access-token").post(refreshAccessToken);
+router.route("/change-password").post(verifyJWT, changeUserPassword);
+router.route("/current-user").get(verifyJWT, getCurrentUser);
+router.route("/update-account").patch(verifyJWT, updateAccountDetails);
 
-router.route('/avatar').patch(
-    verifyJWT,
-    multerUpload.single("avatar"),
-    updateUserAvatar
-)
+router
+    .route("/avatar")
+    .patch(verifyJWT, multerUpload.single("avatar"), updateUserAvatar);
 
-router.route('/cover-image').patch(
-    verifyJWT,
-    multerUpload.single("coverImage"),
-    updateUserCoverImage
-)
+router
+    .route("/cover-image")
+    .patch(verifyJWT, multerUpload.single("coverImage"), updateUserCoverImage);
 
 // router.route("/c/:username").get(verifyJWT,getUserChannelProfile)
-router.route("/:username").get(verifyJWT,getUserChannelProfile)
+router.route("/:username").get(verifyJWT, getUserChannelProfile);
 
-router.route('/history').get(verifyJWT,getWatchHistory)
+router.route("/history").get(verifyJWT, getWatchHistory);
 
-export default router
+export default router;
