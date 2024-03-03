@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import {
     CLOUDINARY_THUMBNAIL_FOLDER,
     CLOUDINARY_VIDEO_FOLDER,
@@ -6,7 +7,7 @@ import { Video } from "../models/video.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { uploadFile } from "../utils/cloudinary.js";
+import { deleteFromCloudinary, uploadFile } from "../utils/cloudinary.js";
 
 const uploadNewVideo = asyncHandler(async (req, res) => {
     /*
@@ -62,7 +63,7 @@ const uploadNewVideo = asyncHandler(async (req, res) => {
         title,
         description,
         duration: Math.round(video.duration),
-        isPublished,
+        isPublished, // check if set correctly
         owner: req.user,
     });
 
@@ -75,8 +76,18 @@ const uploadNewVideo = asyncHandler(async (req, res) => {
 
 const updateVideo = asyncHandler(async (req, res) => {
     const { videoId } = req.params;
+
+    if (!videoId?.trim() || !mongoose.isValidObjectId(videoId))
+        throw new ApiError(400, "Video Id is required or invalid");
+
     const newThumbnailLocalPath = req.file?.path;
     const { description, title } = req.body;
+
+    const videoExists = await Video.findById(videoId);
+
+    if (!videoExists) {
+        throw new ApiError(400, "The video with given id does not exist");
+    }
 
     if (!description || !title) {
         throw new ApiError(400, "Description and title cannot be empty");
@@ -117,6 +128,92 @@ const updateVideo = asyncHandler(async (req, res) => {
 
 const getVideoById = asyncHandler(async (req, res) => {
     const { videoId } = req.params;
+    if (!videoId?.trim() || !mongoose.isValidObjectId(videoId))
+        throw new ApiError(400, "Video Id is required or invalid");
+
+    const reqVideo = await Video.findById(videoId).select("-owner");
+
+    if (!reqVideo) {
+        throw new ApiError(400, "Invalid video id");
+    }
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, reqVideo, "Video fetched successfully"));
 });
 
-export { uploadNewVideo, updateVideo };
+const deleteVideoById = asyncHandler(async (req, res) => {
+    const { videoId } = req.params;
+    if (!videoId?.trim() || !mongoose.isValidObjectId(videoId))
+        throw new ApiError(400, "Video id is required");
+
+    const videoDocument = await Video.findById(videoId);
+    if (!videoDocument) {
+        throw new ApiError(
+            400,
+            "The video with the associated id does not exist"
+        );
+    }
+
+    const videoUrl = videoDocument.videoFile;
+    const thumbnailUrl = videoDocument.thumbnail;
+
+    const videoDelete = await deleteFromCloudinary(videoUrl);
+    const thumbnailDelete = await deleteFromCloudinary(thumbnailUrl);
+
+    if (!videoDelete || !thumbnailDelete) {
+        throw new ApiError(
+            500,
+            "Something went wrong while deleting video or thumbnail"
+        );
+    }
+
+    const videoDocumentDelete = await Video.deleteOne({
+        _id: new mongoose.Types.ObjectId(videoDocument._id),
+    });
+
+    if (!videoDocumentDelete) {
+        throw new ApiError(
+            500,
+            "Something went wrong while deleting the video"
+        );
+    }
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, {}, "Video deleted successfully"));
+});
+
+const togglePublishStatus = asyncHandler(async (req, res) => {
+    const { videoId } = req.params;
+    if (!videoId?.trim() || !mongoose.isValidObjectId(videoId)) {
+        throw new ApiError(400, "Video Id is required or invalid");
+    }
+
+    const videoDocument = await Video.findById(videoId);
+
+    if (!videoDocument) {
+        throw new ApiError(500, "The requested video doesn't exist");
+    }
+
+    videoDocument.isPublished = !videoDocument.isPublished;
+    const resp = await videoDocument.save();
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                videoDocument,
+                "Updated publish status successfully"
+            )
+        );
+});
+
+export {
+    uploadNewVideo,
+    updateVideo,
+    getVideoById,
+    deleteVideoById,
+    togglePublishStatus,
+};
