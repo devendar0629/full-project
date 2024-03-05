@@ -9,6 +9,11 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { deleteFromCloudinary, uploadFile } from "../utils/cloudinary.js";
 
+const getAllVideos = asyncHandler(async (req, res) => {
+    const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
+});
+
+// TODO: Add like field and views to the response
 const uploadNewVideo = asyncHandler(async (req, res) => {
     /*
         => get video and thumbnail localpaths
@@ -126,6 +131,7 @@ const updateVideo = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, updatedVideo));
 });
 
+// TODO: Add like field and views to the response
 const getVideoById = asyncHandler(async (req, res) => {
     const { videoId } = req.params;
     if (!videoId?.trim() || !mongoose.isValidObjectId(videoId))
