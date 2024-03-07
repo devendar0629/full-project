@@ -5,6 +5,9 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
+// TODO
+const getLikedVideos = asyncHandler(async (req, res) => {});
+
 const toggleVideoLike = asyncHandler(async (req, res) => {
     const { videoId } = req.params;
     if (!videoId || !isValidObjectId(videoId)) {
@@ -63,16 +66,108 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
 
 const toggleCommentLike = asyncHandler(async (req, res) => {
     const { commentId } = req.params;
-    //TODO: toggle like on comment
+
+    if (!commentId?.trim() || !isValidObjectId(commentId)) {
+        throw new ApiError(400, "Comment id is missing or invalid");
+    }
+
+    const commentLike = await Like.find({
+        comment: commentId,
+        likedBy: req.user?._id,
+    });
+
+    let finalLikeStatus;
+
+    if (!commentLike) {
+        const newLike = await Like.create({
+            comment: commentId,
+            likedBy: req.user?._id,
+        });
+
+        if (!newLike)
+            throw new ApiError(
+                500,
+                "Something went wrong while liking the comment"
+            );
+        finalLikeStatus = true;
+    } else {
+        const likeDelete = await Like.deleteOne({
+            comment: commentId,
+            likedBy: req.user?._id,
+        });
+
+        if (!likeDelete)
+            throw new ApiError(
+                500,
+                "Something went wrong while disliking the comment"
+            );
+        finalLikeStatus = false;
+    }
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                {},
+                finalLikeStatus
+                    ? "Liked comment successfully"
+                    : "Disliked comment successfully"
+            )
+        );
 });
 
 const toggleTweetLike = asyncHandler(async (req, res) => {
     const { tweetId } = req.params;
-    //TODO: toggle like on tweet
-});
 
-const getLikedVideos = asyncHandler(async (req, res) => {
-    //TODO: get all liked videos
+    if (!tweetId?.trim() || !isValidObjectId(tweetId)) {
+        throw new ApiError(400, "Tweet id is missing or invalid");
+    }
+
+    const tweetLike = await Like.find({
+        tweet: tweetId,
+        likedBy: req.user?._id,
+    });
+
+    let finalLikeStatus;
+
+    if (!tweetLike) {
+        const newLike = await Like.create({
+            tweet: tweetId,
+            likedBy: req.user?._id,
+        });
+
+        if (!newLike)
+            throw new ApiError(
+                500,
+                "Something went wrong while liking the tweet"
+            );
+        finalLikeStatus = true;
+    } else {
+        const likeDelete = await Like.deleteOne({
+            tweet: tweetId,
+            likedBy: req.user?._id,
+        });
+
+        if (!likeDelete)
+            throw new ApiError(
+                500,
+                "Something went wrong while disliking the tweet"
+            );
+        finalLikeStatus = false;
+    }
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                {},
+                finalLikeStatus
+                    ? "Liked tweet successfully"
+                    : "Disliked tweet successfully"
+            )
+        );
 });
 
 export { toggleCommentLike, toggleTweetLike, toggleVideoLike, getLikedVideos };
