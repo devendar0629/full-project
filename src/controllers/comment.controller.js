@@ -32,7 +32,9 @@ const addComment = asyncHandler(async (req, res) => {
 
     return res
         .status(200)
-        .json(new ApiResponse(200, {}, "Comment created successfully"));
+        .json(
+            new ApiResponse(200, commentCreate, "Comment created successfully")
+        );
 });
 
 const updateComment = asyncHandler(async (req, res) => {
@@ -44,6 +46,17 @@ const updateComment = asyncHandler(async (req, res) => {
     if (!commentId?.trim() || !isValidObjectId(commentId)) {
         throw new ApiError(400, "Comment id is missing or invalid");
     }
+
+    const commentFind = await Comment.findById(commentId);
+
+    if (!commentFind)
+        throw new ApiError(404, "The requested comment doesn't exist");
+
+    if (commentFind.owner?.toString() !== req.user?._id?.toString())
+        throw new ApiError(
+            400,
+            "The requested action cannot be performed by current user"
+        );
 
     const update = await Comment.findByIdAndUpdate(
         commentId,
@@ -75,17 +88,22 @@ const deleteComment = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Comment id is missing or invalid");
     }
 
+    const commentFind = await Comment.findById(commentId);
+
+    if (!commentFind)
+        throw new ApiError(404, "The requested comment doesn't exist");
+
     // TODO : Review this
-    if (comment.commentedBy?.toString() !== req.user?._id?.toString()) {
+    if (commentFind.commentedBy?.toString() !== req.user?._id?.toString()) {
         throw new ApiError(
             401,
             "The requested action cannot be performed by the current user"
         );
     }
 
-    const comment = await Comment.findByIdAndDelete(commentId);
+    const commentDelete = await Comment.findByIdAndDelete(commentId);
 
-    if (!comment)
+    if (!commentDelete)
         throw new ApiError(
             500,
             "Either the comment does not exist or Something went wrong while deleting the comment"
@@ -93,7 +111,9 @@ const deleteComment = asyncHandler(async (req, res) => {
 
     return res
         .status(200)
-        .json(new ApiResponse(200, {}, "Comment deleted successfully"));
+        .json(
+            new ApiResponse(200, commentDelete, "Comment deleted successfully")
+        );
 });
 
 export { getVideoComments, addComment, updateComment, deleteComment };
