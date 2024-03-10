@@ -1,4 +1,4 @@
-import mongoose, { isValidObjectId } from "mongoose";
+import { isValidObjectId } from "mongoose";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Tweet } from "../models/tweet.model";
@@ -41,11 +41,15 @@ const updateTweet = asyncHandler(async (req, res) => {
             "The requested action cannot be performed by the current user"
         );
 
-    const tweetUpdate = await Tweet.findByIdAndUpdate(tweetId, {
-        $set: {
-            content,
+    const tweetUpdate = await Tweet.findByIdAndUpdate(
+        tweetId,
+        {
+            $set: {
+                content,
+            },
         },
-    });
+        { new: true }
+    );
 
     if (!tweetUpdate)
         throw new ApiError(
