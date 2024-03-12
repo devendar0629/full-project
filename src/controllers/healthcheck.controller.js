@@ -1,6 +1,6 @@
-import { SERVER_HEALTH } from "../constants";
-import { ApiError } from "../utils/ApiError";
-import { ApiResponse } from "../utils/ApiResponse";
+import { SERVER_HEALTH } from "../constants.js";
+import { ApiError } from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
 
 const getHealth = (req, res) => {
     if (SERVER_HEALTH === "OK")

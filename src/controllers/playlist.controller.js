@@ -45,6 +45,49 @@ const getPlaylistById = asyncHandler(async (req, res) => {
 
 const addVideoToPlaylist = asyncHandler(async (req, res) => {
     const { playlistId, videoId } = req.params;
+
+    if (!isValidObjectId(playlistId) || !playlistId?.trim())
+        throw new ApiError(400, "Playlist id is invalid or empty");
+    if (!isValidObjectId(videoId) || !videoId?.trim())
+        throw new ApiError(400, "Video id is invalid or empty");
+
+    const playlistFind = await Playlist.findById(playlistId);
+    if (!playlistFind) throw new ApiError(404, "Playlist not found");
+
+    const videoFind = await Video.findById(videoId);
+    if (!videoFind) throw new ApiError(404, "Video not found");
+
+    if (playlistFind.owner?.toString() !== req.user?._id?.toString())
+        throw new ApiError(
+            400,
+            "The requested action cannot be performed by the current user"
+        );
+
+    // Check working
+    const videoExistInPlaylist = playlistFind.videos.findIndex(
+        (vidId) => vidId.toString() === videoFind._id?.toString()
+    );
+
+    // video doesn't exist in playlist
+    if (videoExistInPlaylist === -1) {
+        playlistFind.videos.push(videoId);
+        const playlistSave = await playlistFind.save();
+        if (!playlistSave)
+            throw new ApiError(
+                500,
+                "Something went wrong while adding video to the playlist"
+            );
+    } else throw new ApiError(400, "Video already exists in the playlist");
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                playlistFind,
+                "Video added to playlist successfully"
+            )
+        );
 });
 
 const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
@@ -60,6 +103,12 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
 
     const videoFind = await Video.findById(videoId);
     if (!videoFind) throw new ApiError(404, "Video not found");
+
+    if (playlistFind.owner?.toString() !== req.user?._id?.toString())
+        throw new ApiError(
+            400,
+            "The requested action cannot be performed by the current user"
+        );
 
     // Check working
     playlistFind.videos = playlistFind.videos.filter(
