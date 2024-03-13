@@ -13,7 +13,7 @@ import {
 } from "../controllers/tweet.controller.js";
 
 router.route("/").post(createTweet);
-router.route("user/:userId").get(getUserTweets);
+router.route("/user/:userId").get(getUserTweets);
 router.route("/:tweetId").delete(deleteTweet).patch(updateTweet);
 
 export default router;
