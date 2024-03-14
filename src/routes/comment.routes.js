@@ -12,7 +12,7 @@ import {
 
 router.use(verifyJWT);
 
-router.route(":videoId").get(getVideoComments).post(addComment);
-router.route(":commentId").delete(deleteComment).patch(updateComment);
+router.route("/:videoId").get(getVideoComments).post(addComment);
+router.route("/:commentId").delete(deleteComment).patch(updateComment);
 
 export default router;

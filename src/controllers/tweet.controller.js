@@ -17,7 +17,6 @@ const getUserTweets = asyncHandler(async (req, res) => {
     // if limit is NaN or less than 0 , set it to default -> 10
     limit = isNaN(limit) || parseInt(limit) <= 0 ? 10 : parseInt(limit);
 
-    // WARNING: check this
     const checkUser = await User.exists({
         _id: new mongoose.Types.ObjectId(userId),
     });
