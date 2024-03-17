@@ -11,8 +11,11 @@ import {
     getSubscribedChannels,
 } from "../controllers/subscription.controller.js";
 
-router.route("/:channelId").get(getSubscribedChannels).post(toggleSubscription);
+router
+    .route("/:channelId")
+    .get(getUserChannelSubscribers)
+    .post(toggleSubscription);
 
-router.route("/:subscriberId").get(getUserChannelSubscribers);
+router.route("/").get(getSubscribedChannels);
 
 export default router;

@@ -27,6 +27,7 @@ const getPublicIdFromUrl = (cloudinaryUrl) => {
     return publicId;
 };
 
+// TODO: Create a new function that uploads videos optimized and faster
 const uploadFile = async (localFilePath, folderName = "") => {
     try {
         if (!localFilePath) return null;

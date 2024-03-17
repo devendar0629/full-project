@@ -1,12 +1,94 @@
 import { Video } from "../models/video.model.js";
-import { isValidObjectId } from "mongoose";
+import mongoose, { isValidObjectId } from "mongoose";
 import { Like } from "../models/like.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
-// TODO
-const getLikedVideos = asyncHandler(async (req, res) => {});
+const getLikedVideos = asyncHandler(async (req, res) => {
+    const likedVideos = await Like.aggregate([
+        {
+            $match: {
+                likedBy: new mongoose.Types.ObjectId(req.user?._id),
+            },
+        },
+        {
+            $lookup: {
+                from: "videos",
+                localField: "video",
+                foreignField: "_id",
+                as: "video",
+                pipeline: [
+                    {
+                        $project: {
+                            title: 1,
+                            views: 1,
+                            thumbnail: 1,
+                            duration: 1,
+                            videoFile: 1,
+                            owner: 1,
+                        },
+                    },
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "owner",
+                            foreignField: "_id",
+                            as: "uploadedBy",
+                            pipeline: [
+                                {
+                                    $project: {
+                                        fullName: 1,
+                                        username: 1,
+                                        avatar: 1,
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                ],
+            },
+        },
+        {
+            $addFields: {
+                // this overwrites the previous video which was wrapped in a array
+                video: {
+                    $first: "$video",
+                },
+            },
+        },
+        {
+            $project: {
+                _id: 0,
+                __v: 0,
+                likedBy: 0,
+                createdAt: 0,
+                updatedAt: 0,
+            },
+        },
+        {
+            $replaceRoot: {
+                newRoot: "$video",
+            },
+        },
+    ]);
+
+    if (!likedVideos)
+        throw new ApiError(
+            500,
+            "Something went wrong while fetching liked videos"
+        );
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                likedVideos,
+                "Liked videos are fetched successfully"
+            )
+        );
+});
 
 const toggleVideoLike = asyncHandler(async (req, res) => {
     const { videoId } = req.params;
