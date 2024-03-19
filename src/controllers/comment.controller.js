@@ -5,9 +5,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Video } from "../models/video.model.js";
 
-// TODO
 const getVideoComments = asyncHandler(async (req, res) => {
-    //TODO: get all comments for a video
     const { videoId } = req.params;
     let { page = 1, limit = 10 } = req.query;
 
@@ -34,20 +32,12 @@ const getVideoComments = asyncHandler(async (req, res) => {
             },
         },
         {
-            $project: {
-                content: 1,
-                owner: 1,
-                video: -1, // user is already using the video id to fetch the comments
-            },
-        },
-        {
             $lookup: {
                 from: "users",
                 localField: "owner",
                 foreignField: "_id",
                 as: "commenter",
                 pipeline: [
-                    // TODO: Remove the extra wrapped
                     {
                         $project: {
                             username: 1,
@@ -56,6 +46,27 @@ const getVideoComments = asyncHandler(async (req, res) => {
                         },
                     },
                 ],
+            },
+        },
+        {
+            $addFields: {
+                commenter: {
+                    $first: "$commenter",
+                },
+            },
+        },
+        // Following two pipelines are to merge the commenter object to the root , so it can be accessed easily
+        {
+            $addFields: {
+                username: "$commenter.username",
+                fullName: "$commenter.fullName",
+                avatar: "$commenter.avatar",
+            },
+        },
+        {
+            $project: {
+                _id: 0,
+                commenter: 0,
             },
         },
         {

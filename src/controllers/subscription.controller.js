@@ -139,7 +139,6 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
         );
 });
 
-// TODO
 const getSubscribedChannels = asyncHandler(async (req, res) => {
     const subscribedChannels = await Subscription.aggregate([
         {

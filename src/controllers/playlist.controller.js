@@ -1,4 +1,4 @@
-import { isValidObjectId } from "mongoose";
+import mongoose, { isValidObjectId } from "mongoose";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Playlist } from "../models/playlist.model.js";
@@ -6,8 +6,65 @@ import { Video } from "../models/video.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 const getUserPlaylists = asyncHandler(async (req, res) => {
-    const { userId } = req.params;
-    //TODO: get user playlists
+    // We need to fetch only the currently logged in user
+    // No need to expose everyone's playlists
+    const playlists = await Playlist.aggregate([
+        {
+            $match: {
+                owner: new mongoose.Types.ObjectId(req.user?._id),
+            },
+        },
+        {
+            $project: {
+                owner: 0,
+            },
+        },
+        {
+            $lookup: {
+                from: "videos",
+                localField: "videos",
+                foreignField: "_id",
+                as: "videos",
+                pipeline: [
+                    {
+                        $project: {
+                            thumbnail: 1,
+                        },
+                    },
+                ],
+            },
+        },
+        {
+            $addFields: {
+                // Just the first video to show as the playlist preview
+                firstVideo: {
+                    $first: "$videos",
+                },
+            },
+        },
+        {
+            $project: {
+                videos: 0,
+            },
+        },
+        {
+            $sort: {
+                createdAt: -1,
+            },
+        },
+    ]);
+
+    if (!playlists)
+        throw new ApiError(
+            500,
+            "Something went wrong while fetching the playlists"
+        );
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, playlists, "Playlists fetched successfully")
+        );
 });
 
 const createPlaylist = asyncHandler(async (req, res) => {
@@ -36,12 +93,81 @@ const createPlaylist = asyncHandler(async (req, res) => {
         );
 });
 
-// TODO
 const getPlaylistById = asyncHandler(async (req, res) => {
     const { playlistId } = req.params;
+
     if (!playlistId?.trim() || !isValidObjectId(playlistId)) {
         throw new ApiError(400, "Playlist id is either invalid or empty");
     }
+
+    const playlistExist = await Playlist.exists({
+        _id: new mongoose.Types.ObjectId(playlistId),
+    });
+
+    if (!playlistExist) throw new ApiError(404, "Playlist does not exist");
+
+    const playlist = await Playlist.aggregate([
+        {
+            $match: {
+                _id: new mongoose.Types.ObjectId(playlistId),
+            },
+        },
+        {
+            $project: {
+                _id: 0, // user is already requesting with the playlist id
+                __v: 0,
+                owner: 0,
+            },
+        },
+        {
+            $lookup: {
+                from: "videos",
+                localField: "videos",
+                foreignField: "_id",
+                as: "videos",
+                pipeline: [
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "owner",
+                            foreignField: "_id",
+                            as: "videoOwner",
+                            pipeline: [
+                                {
+                                    $project: {
+                                        fullName: 1,
+                                        username: 1,
+                                        avatar: 1,
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                    {
+                        $addFields: {
+                            videoOwner: {
+                                $first: "$videoOwner",
+                            },
+                        },
+                    },
+                    {
+                        $project: {
+                            isPublished: 0,
+                            owner: 0,
+                            __v: 0,
+                        },
+                    },
+                ],
+            },
+        },
+    ]);
+
+    if (!playlist)
+        throw new ApiError(500, "Something went wrong while fetching playlist");
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, playlist, "Playlist fetched successfully"));
 });
 
 const addVideoToPlaylist = asyncHandler(async (req, res) => {
