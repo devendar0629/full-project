@@ -522,7 +522,6 @@ const getWatchHistory = asyncHandler(async (req, res) => {
                             ],
                         },
                     },
-                    // TODO : Print the result of this aggregation without this pipeline and see the difference
                     {
                         $addFields: {
                             owner: {

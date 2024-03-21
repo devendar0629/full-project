@@ -107,9 +107,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
         },
         {
             $project: {
-                // TODO : Test to include a field that is only removed and the rest are passed , instead of specifying which fields are required
                 _id: 0,
-                // subscriber: 1,
                 createdAt: 1,
                 updatedAt: 1,
                 subscriber: 1,
