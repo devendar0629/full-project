@@ -1,11 +1,94 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Video } from "../models/video.model.js";
+import { Subscription } from "../models/subscription.model.js";
 import mongoose from "mongoose";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
 const getChannelStats = asyncHandler(async (req, res) => {
     // TODO: Get the channel stats like total video views, total subscribers, total videos, total likes etc.
+    // Views are not possible without view model
+
+    let subscriberCount = await Subscription.countDocuments({
+        channel: new mongoose.Types.ObjectId(req.user?._id),
+    });
+
+    if (!subscriberCount)
+        throw new ApiError(
+            500,
+            "Something went wrong while fetching the subscribers"
+        );
+
+    let totalLikes = await Video.aggregate([
+        {
+            // get user videos
+            $match: {
+                owner: new mongoose.Types.ObjectId(req.user?._id),
+            },
+        },
+        {
+            $project: {
+                _id: 1,
+            },
+        },
+        {
+            $lookup: {
+                from: "likes",
+                localField: "_id",
+                foreignField: "video",
+                as: "likes",
+            },
+        },
+        {
+            $addFields: {
+                likes: {
+                    $size: "$likes",
+                },
+            },
+        },
+        {
+            $group: {
+                _id: null,
+                likes: {
+                    $sum: "$likes",
+                },
+            },
+        },
+    ]);
+
+    if (!totalLikes)
+        throw new ApiError(
+            500,
+            "Something went wrong while fetching total likes"
+        );
+
+    let videosCount = await Video.countDocuments({
+        owner: new mongoose.Types.ObjectId(req.user?._id),
+    });
+
+    if (!videosCount)
+        throw new ApiError(
+            500,
+            "Something went wrong while fetching the videos count"
+        );
+
+    totalLikes = totalLikes[0]?.likes;
+
+    let channelStats = {
+        subscriberCount,
+        videosCount,
+        totalLikes,
+    };
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                channelStats,
+                "Channel stats fetched successfully"
+            )
+        );
 });
 
 const getChannelVideos = asyncHandler(async (req, res) => {
