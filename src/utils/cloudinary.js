@@ -8,8 +8,8 @@ cloudinary.config({
 });
 
 const getPublicIdFromUrl = (cloudinaryUrl) => {
-    // http://res.cloudinary.com/juniorcloud/image/upload/v1709466179/thumbnails/nzmo5kcuv7ymw1hakky4.jpg
-    // public id : thumbnails/nzmo5kcuv7ymw1hakky4
+    // http://res.cloudinary.com/examplecloud/image/upload/v1709466179/tls/mo5khakky4.jpg
+    // public id : thumbnails/mo5khakky4
 
     let lastSecondSlash = null;
     let slashCount = 0;
@@ -52,7 +52,6 @@ const uploadFile = async (localFilePath, folderName = "") => {
     }
 };
 
-// TODO: Try this
 const deleteFromCloudinary = async (cloudinaryUrl) => {
     try {
         const publicId = getPublicIdFromUrl(cloudinaryUrl);

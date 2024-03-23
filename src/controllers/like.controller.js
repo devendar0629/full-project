@@ -25,8 +25,22 @@ const getLikedVideos = asyncHandler(async (req, res) => {
                             views: 1,
                             thumbnail: 1,
                             duration: 1,
-                            videoFile: 1,
                             owner: 1,
+                        },
+                    },
+                    {
+                        $lookup: {
+                            from: "likes",
+                            localField: "_id",
+                            foreignField: "video",
+                            as: "likes",
+                        },
+                    },
+                    {
+                        $addFields: {
+                            likes: {
+                                $size: "$likes",
+                            },
                         },
                     },
                     {
@@ -44,6 +58,16 @@ const getLikedVideos = asyncHandler(async (req, res) => {
                                     },
                                 },
                             ],
+                        },
+                    },
+                    {
+                        $project: {
+                            owner: 0,
+                        },
+                    },
+                    {
+                        $unwind: {
+                            path: "$uploadedBy",
                         },
                     },
                 ],
@@ -134,10 +158,10 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
     }
 
     return res
-        .status(200)
+        .status(204)
         .json(
             new ApiResponse(
-                200,
+                204,
                 {},
                 finalLikeStatus
                     ? "Liked video successfully"
@@ -187,10 +211,10 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
     }
 
     return res
-        .status(200)
+        .status(204)
         .json(
             new ApiResponse(
-                200,
+                204,
                 {},
                 finalLikeStatus
                     ? "Liked comment successfully"
@@ -240,10 +264,10 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
     }
 
     return res
-        .status(200)
+        .status(204)
         .json(
             new ApiResponse(
-                200,
+                204,
                 {},
                 finalLikeStatus
                     ? "Liked tweet successfully"

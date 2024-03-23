@@ -106,6 +106,11 @@ const getChannelVideos = asyncHandler(async (req, res) => {
             },
         },
         {
+            $project: {
+                owner: 0,
+            },
+        },
+        {
             $lookup: {
                 from: "likes",
                 localField: "_id",

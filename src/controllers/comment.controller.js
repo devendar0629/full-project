@@ -12,10 +12,7 @@ const getVideoComments = asyncHandler(async (req, res) => {
     if (!isValidObjectId(videoId) || !videoId?.trim())
         throw new ApiError(400, "Video id is either invalid or empty");
 
-    // if page is NaN or less than 0 , set it to default -> 1
     page = isNaN(page) || parseInt(page) <= 0 ? 1 : parseInt(page);
-
-    // if limit is NaN or less than 0 , set it to default -> 10
     limit = isNaN(limit) || parseInt(limit) <= 0 ? 10 : parseInt(limit);
 
     const videoExists = await Video.exists({
@@ -144,7 +141,7 @@ const updateComment = asyncHandler(async (req, res) => {
             "The requested action cannot be performed by current user"
         );
 
-    const update = await Comment.findByIdAndUpdate(
+    const commentUpdate = await Comment.findByIdAndUpdate(
         commentId,
         {
             $set: {
@@ -156,7 +153,7 @@ const updateComment = asyncHandler(async (req, res) => {
         }
     );
 
-    if (!update)
+    if (!commentUpdate)
         throw new ApiError(
             500,
             "Something went wrong while updating the comment"
@@ -164,7 +161,9 @@ const updateComment = asyncHandler(async (req, res) => {
 
     return res
         .status(200)
-        .json(new ApiResponse(200, update, "Comment updated successfully"));
+        .json(
+            new ApiResponse(200, commentUpdate, "Comment updated successfully")
+        );
 });
 
 const deleteComment = asyncHandler(async (req, res) => {
@@ -195,10 +194,8 @@ const deleteComment = asyncHandler(async (req, res) => {
         );
 
     return res
-        .status(200)
-        .json(
-            new ApiResponse(200, commentDelete, "Comment deleted successfully")
-        );
+        .status(204)
+        .json(new ApiResponse(204, {}, "Comment deleted successfully"));
 });
 
 export { getVideoComments, addComment, updateComment, deleteComment };

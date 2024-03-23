@@ -149,7 +149,6 @@ const loginUser = asyncHandler(async (req, res) => {
     // generate access and refresh tokens
     // send cookie
 
-    // TODO: here form data is not working ,check
     const { email, username, password } = req.body;
 
     if (!email && !username) {

@@ -11,10 +11,7 @@ const getUserTweets = asyncHandler(async (req, res) => {
     if (!isValidObjectId(userId) || !userId?.trim())
         throw new ApiError(400, "User id is either invalid or required");
 
-    // if page is NaN or less than 0 , set it to default -> 1
     page = isNaN(page) || parseInt(page) <= 0 ? 1 : parseInt(page);
-
-    // if limit is NaN or less than 0 , set it to default -> 10
     limit = isNaN(limit) || parseInt(limit) <= 0 ? 10 : parseInt(limit);
 
     const checkUser = await User.exists({
@@ -112,9 +109,6 @@ const updateTweet = asyncHandler(async (req, res) => {
 
     if (!content?.trim()) throw new ApiError(400, "New Tweet cannot be empty");
 
-    // const tweetFind = await Tweet.exists({
-    //     _id: new mongoose.Types.ObjectId(tweetId),
-    // });
     const tweetFind = await Tweet.findById(tweetId);
 
     if (!tweetFind)
@@ -172,8 +166,8 @@ const deleteTweet = asyncHandler(async (req, res) => {
         );
 
     return res
-        .status(200)
-        .json(new ApiResponse(200, tweetDelete, "Tweet deleted successfully"));
+        .status(204)
+        .json(new ApiResponse(204, {}, "Tweet deleted successfully"));
 });
 
 export { createTweet, getUserTweets, updateTweet, deleteTweet };

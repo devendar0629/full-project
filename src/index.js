@@ -22,6 +22,8 @@ connectDB()
         console.log(`MONGODB -> CONNECTION FAILED : `, err);
     });
 
+// Another method
+
 // require("dotenv").config({path:'./env'})
 
 // ;(async function connectDB() {
