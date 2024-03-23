@@ -6,7 +6,8 @@ import { Tweet } from "../models/tweet.model.js";
 import { User } from "../models/user.model.js";
 
 const getUserTweets = asyncHandler(async (req, res) => {
-    let { page = 1, limit = 10, userId } = req.params;
+    const { userId } = req.params;
+    let { page = 1, limit = 10 } = req.query;
 
     if (!isValidObjectId(userId) || !userId?.trim())
         throw new ApiError(400, "User id is either invalid or required");

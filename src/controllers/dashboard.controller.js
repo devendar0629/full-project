@@ -6,8 +6,6 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
 const getChannelStats = asyncHandler(async (req, res) => {
-    // Views are not possible without view model
-
     let subscriberCount = await Subscription.countDocuments({
         channel: new mongoose.Types.ObjectId(req.user?._id),
     });
@@ -18,7 +16,7 @@ const getChannelStats = asyncHandler(async (req, res) => {
             "Something went wrong while fetching the subscribers"
         );
 
-    let totalLikes = await Video.aggregate([
+    let likesCount = await Video.aggregate([
         {
             // get user videos
             $match: {
@@ -55,7 +53,7 @@ const getChannelStats = asyncHandler(async (req, res) => {
         },
     ]);
 
-    if (!totalLikes)
+    if (!likesCount)
         throw new ApiError(
             500,
             "Something went wrong while fetching total likes"
@@ -71,12 +69,34 @@ const getChannelStats = asyncHandler(async (req, res) => {
             "Something went wrong while fetching the videos count"
         );
 
-    totalLikes = totalLikes[0]?.likes;
+    let viewsCount = await Video.aggregate([
+        {
+            $match: {
+                owner: new mongoose.Types.ObjectId(req.user?._id),
+            },
+        },
+        {
+            $group: {
+                _id: null,
+                totalViews: { $sum: "$views" },
+            },
+        },
+    ]);
+
+    if (!viewsCount)
+        throw new ApiError(
+            500,
+            "Something went wrong while fetching the views count"
+        );
+
+    likesCount = likesCount[0]?.likes;
+    viewsCount = viewsCount[0]?.totalViews;
 
     let channelStats = {
         subscriberCount,
         videosCount,
-        totalLikes,
+        likesCount,
+        viewsCount,
     };
 
     return res

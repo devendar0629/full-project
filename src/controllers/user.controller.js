@@ -489,11 +489,9 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 });
 
 const getWatchHistory = asyncHandler(async (req, res) => {
-    //THINK : It is another method , without getting username as a paramater from the req -> req.params , like from earlier handler
     const user = await User.aggregate([
         {
             $match: {
-                /*  We can't use req.user?._id directly , because req.user?._id returns string and we need to covert it to mongoDB id by using mongoose */
                 _id: new mongoose.Types.ObjectId(req.user?._id),
             },
         },
